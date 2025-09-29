@@ -180,7 +180,7 @@ const App: React.FC = () => {
       </main>
 
        <footer className="w-full max-w-6xl text-center mt-12 text-zinc-500 text-sm">
-        <p>Создано с помощью Google Gemini. Изображения сгенерированы ИИ и могут быть неидеальными.</p>
+        <p>Создано в Alavenir с любовью и применением технологий Google AI</p>
       </footer>
     </div>
   );
