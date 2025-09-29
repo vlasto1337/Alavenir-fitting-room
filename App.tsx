@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { ImageUploader } from './components/ImageUploader';
 import { ResultDisplay } from './components/ResultDisplay';
 import { generateStyledImage } from './services/geminiService';
-import { SparklesIcon, LogoIcon } from './components/icons';
+import { SparklesIcon, LogoIcon, ChevronDownIcon } from './components/icons';
 import { Faq } from './components/Faq';
 
 const PROMPT_PRESETS = [
@@ -25,6 +25,10 @@ const App: React.FC = () => {
   const [outfitImageFile, setOutfitImageFile] = useState<File | null>(null);
   const [outfitImagePreview, setOutfitImagePreview] = useState<string | null>(null);
   
+  // Advanced settings
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+  const [creativityLevel, setCreativityLevel] = useState<number>(25);
+
   // Result state
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -196,7 +200,8 @@ const App: React.FC = () => {
         base64Image,
         originalImageFile.type,
         prompt,
-        outfitImageDetails
+        outfitImageDetails,
+        creativityLevel,
       );
       
       const pngDataUrl = await convertToPng(newImageBase64);
@@ -207,7 +212,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [originalImageFile, prompt, inputMode, outfitImageFile]);
+  }, [originalImageFile, prompt, inputMode, outfitImageFile, creativityLevel]);
   
   const handleContinueStyling = useCallback(() => {
     if (!generatedImage) return;
@@ -302,6 +307,36 @@ const App: React.FC = () => {
                           </div>
                       </div>
                   )
+              )}
+            </div>
+            
+            <div className="mt-2">
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-1 w-full"
+                aria-expanded={showAdvanced}
+              >
+                Расширенные настройки
+                <ChevronDownIcon className={`w-4 h-4 transition-transform duration-300 ${showAdvanced ? 'rotate-180' : ''}`} />
+              </button>
+              {showAdvanced && (
+                <div className="mt-3 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800 animate-fade-in">
+                  <label htmlFor="creativity" className="block text-sm font-medium text-zinc-300">
+                    Уровень креативности: <span className="font-bold text-violet-400 tabular-nums">{creativityLevel}</span>
+                  </label>
+                  <p className="text-xs text-zinc-500 mb-3">
+                    Более высокие значения позволяют ИИ сильнее изменять фон и позу.
+                  </p>
+                  <input
+                    id="creativity"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={creativityLevel}
+                    onChange={(e) => setCreativityLevel(Number(e.target.value))}
+                    className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
               )}
             </div>
 

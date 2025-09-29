@@ -12,7 +12,8 @@ export const generateStyledImage = async (
   base64ImageData: string,
   mimeType: string,
   prompt: string,
-  outfitImage?: { base64: string; mimeType: string; }
+  outfitImage: { base64: string; mimeType: string; } | undefined,
+  creativityLevel: number
 ): Promise<string> => {
   if (!base64ImageData || !mimeType) {
     throw new Error("Отсутствует изображение человека для генерации.");
@@ -31,6 +32,17 @@ export const generateStyledImage = async (
       },
     ];
     
+    let basePrompt: string;
+    if (creativityLevel <= 20) {
+        basePrompt = "Critically important: Do NOT change the person's face, features, body pose, or the background from the first image. Your task is ONLY to redraw that person wearing the specified outfit. Preserve everything else from the original person's image.";
+    } else if (creativityLevel <= 50) {
+        basePrompt = "Preserve the person's face, features, and general body pose from the first image. Redraw them in the specified outfit. You may make subtle adjustments to the background and lighting to better match the new clothing style.";
+    } else if (creativityLevel <= 80) {
+        basePrompt = "Redraw the person from the first image in the specified outfit, keeping their facial identity. Feel free to adjust the body pose slightly for a more natural look and reinterpret the background to create a more cohesive and artistic scene that complements the outfit.";
+    } else {
+        basePrompt = "Create a new artistic image inspired by the first image, featuring the same person but in the specified outfit. Be highly creative with the pose, background, lighting, and overall style to produce a compelling fashion shot.";
+    }
+
     let textPrompt: string;
 
     if (outfitImage) {
@@ -40,9 +52,9 @@ export const generateStyledImage = async (
                 mimeType: outfitImage.mimeType,
             },
         });
-        textPrompt = `Critically important: Do NOT change the person's face, features, body pose, or the background from the first image. Your task is ONLY to redraw that person wearing the outfit from the second image. Preserve everything else from the original person's image.`;
+        textPrompt = basePrompt.replace('the specified outfit', 'the outfit from the second image');
     } else {
-        textPrompt = `Critically important: Do NOT change the person's face, features, body pose, or the background. Your task is ONLY to redraw the person from the photo wearing this specific outfit: "${prompt}". Preserve everything else from the original image.`;
+        textPrompt = basePrompt.replace('the specified outfit', `this specific outfit: "${prompt}"`);
     }
 
     parts.push({ text: textPrompt });
