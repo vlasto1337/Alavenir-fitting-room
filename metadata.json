@@ -1,5 +1,5 @@
 {
-  "name": "HelloWorld",
-  "description": "Upload a photo of yourself, describe an outfit you'd like to wear, and see yourself in that new style using the power of the Gemini NanoBanana model.",
+  "name": "Цифровая примерочная",
+  "description": "Загрузите свое фото, опишите желаемый наряд и примерьте новый стиль с помощью модели Gemini NanoBanana.",
   "requestFramePermissions": []
 }

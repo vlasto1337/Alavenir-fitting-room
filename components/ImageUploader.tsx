@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { UploadIcon } from './icons';
 
@@ -48,25 +47,25 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, ima
 
   return (
     <div>
-       <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
+       <label className="block text-sm font-medium text-zinc-300 mb-2">{label}</label>
       <div 
         onDragEnter={handleDragIn}
         onDragLeave={handleDragOut}
         onDragOver={handleDrag}
         onDrop={handleDrop}
         className={`relative flex justify-center items-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-        ${isDragging ? 'border-purple-500 bg-gray-700/50' : 'border-gray-600 hover:border-gray-500'}
+        ${isDragging ? 'border-violet-500 bg-violet-900/20' : 'border-zinc-700 hover:border-zinc-600'}
         ${imagePreviewUrl ? 'p-0 border-solid' : 'p-4'}`}
       >
         {imagePreviewUrl ? (
           <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-contain rounded-lg" />
         ) : (
-          <div className="text-center text-gray-400">
+          <div className="text-center text-zinc-400">
             <UploadIcon className="mx-auto h-12 w-12" />
             <p className="mt-2">
-              <span className="font-semibold text-purple-400">Click to upload</span> or drag and drop
+              <span className="font-semibold text-violet-400">Нажмите для загрузки</span> или перетащите файл
             </p>
-            <p className="text-xs">PNG, JPG, WEBP (max 4MB)</p>
+            <p className="text-xs">PNG, JPG, WEBP (макс. 4 МБ)</p>
           </div>
         )}
         <input 

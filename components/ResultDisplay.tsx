@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Loader } from './Loader';
 import { ImageIcon } from './icons';
@@ -11,12 +10,12 @@ interface ResultDisplayProps {
 
 export const ResultDisplay: React.FC<ResultDisplayProps> = ({ isLoading, generatedImage, error }) => {
   return (
-    <div className="w-full aspect-square bg-gray-900 rounded-lg flex items-center justify-center p-2 border border-gray-700">
+    <div className="w-full aspect-square bg-black/50 rounded-lg flex items-center justify-center p-2 border border-zinc-800">
       {isLoading && <Loader />}
       
       {!isLoading && error && (
-        <div className="text-center text-red-400 px-4">
-          <p className="font-semibold">Generation Failed</p>
+        <div className="text-center text-red-500 px-4">
+          <p className="font-semibold">Ошибка генерации</p>
           <p className="text-sm mt-1">{error}</p>
         </div>
       )}
@@ -26,10 +25,10 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ isLoading, generat
       )}
       
       {!isLoading && !error && !generatedImage && (
-         <div className="text-center text-gray-500">
+         <div className="text-center text-zinc-500">
             <ImageIcon className="mx-auto h-16 w-16" />
-            <p className="mt-4 font-medium">Your new look will appear here</p>
-            <p className="text-sm">Complete the steps on the left to get started</p>
+            <p className="mt-4 font-medium">Ваш новый образ появится здесь</p>
+            <p className="text-sm">Выполните шаги слева, чтобы начать</p>
          </div>
       )}
     </div>

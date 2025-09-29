@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 
 // Ensure you have your API key set in your environment variables
@@ -16,10 +15,10 @@ export const generateStyledImage = async (
   outfitImage?: { base64: string; mimeType: string; }
 ): Promise<string> => {
   if (!base64ImageData || !mimeType) {
-    throw new Error("Missing person image for generation.");
+    throw new Error("Отсутствует изображение человека для генерации.");
   }
   if (!outfitImage && !prompt.trim()) {
-     throw new Error("Missing outfit description or image.");
+     throw new Error("Отсутствует описание или изображение одежды.");
   }
   
   try {
@@ -67,13 +66,13 @@ export const generateStyledImage = async (
     // Check for text-only response as a fallback for error diagnosis
     const textResponse = response.text;
     if (textResponse) {
-        throw new Error(`The model returned a text response instead of an image: "${textResponse}"`);
+        throw new Error(`Модель вернула текстовый ответ вместо изображения: "${textResponse}"`);
     }
 
-    throw new Error("No image was generated. The model response did not contain image data.");
+    throw new Error("Изображение не было сгенерировано. Ответ модели не содержит данных изображения.");
   } catch (error) {
     console.error("Error generating image with Gemini API:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown API error occurred.";
-    throw new Error(`Failed to generate image. ${errorMessage}`);
+    const errorMessage = error instanceof Error ? error.message : "Произошла неизвестная ошибка API.";
+    throw new Error(`Не удалось сгенерировать изображение. ${errorMessage}`);
   }
 };
