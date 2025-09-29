@@ -40,9 +40,9 @@ export const generateStyledImage = async (
                 mimeType: outfitImage.mimeType,
             },
         });
-        textPrompt = `Given the first image of a person and the second image of an outfit, please redraw the person from the first image wearing the outfit from the second image. Maintain the person's face, features, and the background as much as possible, focusing only on changing the clothing.`;
+        textPrompt = `Critically important: Do NOT change the person's face, features, body pose, or the background from the first image. Your task is ONLY to redraw that person wearing the outfit from the second image. Preserve everything else from the original person's image.`;
     } else {
-        textPrompt = `Given the user photo, please redraw the person wearing the following outfit: ${prompt}. Maintain the person's face, features, and the background as much as possible, focusing only on changing the clothing.`;
+        textPrompt = `Critically important: Do NOT change the person's face, features, body pose, or the background. Your task is ONLY to redraw the person from the photo wearing this specific outfit: "${prompt}". Preserve everything else from the original image.`;
     }
 
     parts.push({ text: textPrompt });

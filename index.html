@@ -10,6 +10,53 @@
       body {
         font-family: 'Inter', sans-serif;
       }
+
+      /* Glow effect for generate button */
+      @keyframes glow {
+        0% {
+          box-shadow: 0 0 5px rgba(139, 92, 246, 0.4), 0 0 10px rgba(139, 92, 246, 0.3);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(139, 92, 246, 0.7), 0 0 30px rgba(139, 92, 246, 0.5);
+        }
+        100% {
+          box-shadow: 0 0 5px rgba(139, 92, 246, 0.4), 0 0 10px rgba(139, 92, 246, 0.3);
+        }
+      }
+
+      .glowing-button {
+        animation: glow 2.5s infinite ease-in-out;
+      }
+      
+      /* FAQ Accordion styles */
+      .faq-answer {
+        overflow: hidden;
+        transition: max-height 0.5s cubic-bezier(0.23, 1, 0.32, 1), padding 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      .faq-answer-open {
+        max-height: 500px; /* Adjust as needed */
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+      }
+      
+      /* Gooey Loader */
+      .gooey-container {
+        filter: url(#goo);
+        animation: rotate 2s linear infinite;
+      }
+
+      @keyframes rotate {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
     </style>
      <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,6 +74,15 @@
 </head>
   <body class="bg-black text-zinc-200">
     <div id="root"></div>
+    <svg class="absolute w-0 h-0">
+      <defs>
+        <filter id="goo">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+          <feBlend in="SourceGraphic" in2="goo" />
+        </filter>
+      </defs>
+    </svg>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -3,6 +3,16 @@ import { ImageUploader } from './components/ImageUploader';
 import { ResultDisplay } from './components/ResultDisplay';
 import { generateStyledImage } from './services/geminiService';
 import { SparklesIcon, LogoIcon } from './components/icons';
+import { Faq } from './components/Faq';
+
+const PROMPT_PRESETS = [
+  'классический тренч поверх белой рубашки',
+  'уютный оверсайз-худи и черные карго-штаны',
+  'элегантный образ с блейзером и темными джинсами',
+  'футуристическая куртка в стиле киберпанк',
+  'богемный стиль с летящей узорчатой рубашкой',
+  'спортивный костюм в ярких неоновых цветах',
+];
 
 const App: React.FC = () => {
   // Person image state
@@ -30,16 +40,82 @@ const App: React.FC = () => {
     };
     reader.readAsDataURL(file);
   };
+
+  const dataURLtoFile = (dataurl: string, filename: string): File | null => {
+    const arr = dataurl.split(',');
+    const match = arr[0].match(/:(.*?);/);
+    if (!match || arr.length < 2) return null;
+    const mime = match[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
   
-  const handleOutfitImageUpload = (file: File) => {
-    setOutfitImageFile(file);
-    setGeneratedImage(null);
+  const handleOutfitImageUpload = async (file: File) => {
+    if (!originalImagePreview) {
+      setError("Пожалуйста, сначала загрузите ваше фото.");
+      return;
+    }
+
+    setOutfitImageFile(null);
+    setOutfitImagePreview(null);
     setError(null);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setOutfitImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setGeneratedImage(null);
+
+    try {
+      const userImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(new Error('Не удалось загрузить фото пользователя для определения размеров.'));
+        img.src = originalImagePreview;
+      });
+
+      const outfitImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = (err) => reject(new Error('Не удалось загрузить фото одежды.'));
+          const objectURL = URL.createObjectURL(file);
+          img.src = objectURL;
+      });
+      
+
+      const targetWidth = userImg.naturalWidth;
+      const targetHeight = userImg.naturalHeight;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Не удалось получить контекст canvas для обработки изображения.');
+
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
+
+      const ratio = Math.min(targetWidth / outfitImg.width, targetHeight / outfitImg.height);
+      const newWidth = outfitImg.width * ratio;
+      const newHeight = outfitImg.height * ratio;
+      const x = (targetWidth - newWidth) / 2;
+      const y = (targetHeight - newHeight) / 2;
+      
+      ctx.drawImage(outfitImg, x, y, newWidth, newHeight);
+
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      const newFile = dataURLtoFile(dataUrl, file.name);
+
+      if (!newFile) {
+        throw new Error('Не удалось преобразовать обработанное изображение в файл.');
+      }
+
+      setOutfitImageFile(newFile);
+      setOutfitImagePreview(dataUrl);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Произошла ошибка при обработке изображения одежды.");
+    }
   };
   
   const handleModeChange = (mode: 'text' | 'image') => {
@@ -62,6 +138,27 @@ const App: React.FC = () => {
         resolve(base64String);
       };
       reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const convertToPng = (jpegBase64: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return reject(new Error('Could not get canvas context'));
+        }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => {
+        reject(new Error('Failed to load image for PNG conversion.'));
+      };
+      img.src = `data:image/jpeg;base64,${jpegBase64}`;
     });
   };
 
@@ -101,7 +198,10 @@ const App: React.FC = () => {
         prompt,
         outfitImageDetails
       );
-      setGeneratedImage(`data:image/jpeg;base64,${newImageBase64}`);
+      
+      const pngDataUrl = await convertToPng(newImageBase64);
+      setGeneratedImage(pngDataUrl);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла неизвестная ошибка.');
     } finally {
@@ -109,6 +209,29 @@ const App: React.FC = () => {
     }
   }, [originalImageFile, prompt, inputMode, outfitImageFile]);
   
+  const handleContinueStyling = useCallback(() => {
+    if (!generatedImage) return;
+
+    const newImageFile = dataURLtoFile(generatedImage, `styled-image-${Date.now()}.png`);
+    if (newImageFile) {
+        handleImageUpload(newImageFile);
+
+        // Reset inputs and results for the next step
+        setPrompt('');
+        setOutfitImageFile(null);
+        setOutfitImagePreview(null);
+        setGeneratedImage(null);
+        setError(null);
+        
+        // Scroll to the top of the controls for better UX
+        const controlsElement = document.getElementById('controls');
+        controlsElement?.scrollIntoView({ behavior: 'smooth' });
+
+    } else {
+        setError("Не удалось использовать сгенерированное изображение. Пожалуйста, попробуйте сохранить его и загрузить вручную.");
+    }
+  }, [generatedImage]);
+
   const canGenerate = originalImageFile && (inputMode === 'text' ? prompt.trim().length > 0 : !!outfitImageFile) && !isLoading;
   
   return (
@@ -125,58 +248,84 @@ const App: React.FC = () => {
         </p>
       </header>
 
-      <main className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-[#111111] p-6 rounded-2xl shadow-lg border border-zinc-800 flex flex-col gap-6">
-          <h2 className="text-xl font-semibold text-zinc-100 border-b border-zinc-800 pb-4">1. Настройка</h2>
-          <ImageUploader onImageUpload={handleImageUpload} imagePreviewUrl={originalImagePreview} label="Загрузите ваше фото:" />
-          
-          <div className="flex flex-col gap-4">
-            <label className="block text-sm font-medium text-zinc-300">Опишите или загрузите одежду:</label>
-            <div className="flex border-b border-zinc-700">
-                <button onClick={() => handleModeChange('text')} className={`py-2 px-4 transition-colors text-sm font-medium ${inputMode === 'text' ? 'text-white border-b-2 border-violet-500' : 'text-zinc-400 hover:text-white focus:outline-none'}`}>
-                    Описать
-                </button>
-                <button onClick={() => handleModeChange('image')} className={`py-2 px-4 transition-colors text-sm font-medium ${inputMode === 'image' ? 'text-white border-b-2 border-violet-500' : 'text-zinc-400 hover:text-white focus:outline-none'}`}>
-                    Загрузить фото
-                </button>
+      <main className="w-full max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div id="controls" className="bg-[#111111] p-6 rounded-2xl shadow-lg border border-zinc-800 flex flex-col gap-6">
+            <h2 className="text-xl font-semibold text-zinc-100 border-b border-zinc-800 pb-4">1. Настройка</h2>
+            <ImageUploader onImageUpload={handleImageUpload} imagePreviewUrl={originalImagePreview} label="Загрузите ваше фото:" />
+            
+            <div className="flex flex-col gap-4">
+              <label className="block text-sm font-medium text-zinc-300">Опишите или загрузите одежду:</label>
+              <div className="flex border-b border-zinc-700">
+                  <button onClick={() => handleModeChange('text')} className={`py-2 px-4 transition-colors text-sm font-medium ${inputMode === 'text' ? 'text-white border-b-2 border-violet-500' : 'text-zinc-400 hover:text-white focus:outline-none'}`}>
+                      Описать
+                  </button>
+                  <button onClick={() => handleModeChange('image')} className={`py-2 px-4 transition-colors text-sm font-medium ${inputMode === 'image' ? 'text-white border-b-2 border-violet-500' : 'text-zinc-400 hover:text-white focus:outline-none'}`}>
+                      Загрузить фото
+                  </button>
+              </div>
+
+              {inputMode === 'text' ? (
+                   <div>
+                    <textarea
+                        id="prompt"
+                        rows={3}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="например, 'черная кожаная куртка поверх белой футболки'"
+                        className="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors placeholder-zinc-500"
+                    />
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {PROMPT_PRESETS.map((preset) => (
+                            <button
+                                key={preset}
+                                onClick={() => setPrompt(preset)}
+                                className="px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300 rounded-full hover:bg-zinc-700 hover:text-white transition-colors"
+                            >
+                                {preset}
+                            </button>
+                        ))}
+                    </div>
+                   </div>
+              ) : (
+                  originalImagePreview ? (
+                      <ImageUploader
+                          onImageUpload={handleOutfitImageUpload}
+                          imagePreviewUrl={outfitImagePreview}
+                          label="Загрузите фото одежды:"
+                      />
+                  ) : (
+                      <div className="flex items-center justify-center w-full h-64 border-2 border-dashed border-zinc-700 rounded-lg bg-zinc-900/50 p-4">
+                          <div className="text-center text-zinc-500">
+                              <p className="font-medium">Пожалуйста, сначала загрузите ваше фото</p>
+                              <p className="text-sm">в разделе выше, чтобы активировать эту опцию.</p>
+                          </div>
+                      </div>
+                  )
+              )}
             </div>
 
-            {inputMode === 'text' ? (
-                 <textarea
-                    id="prompt"
-                    rows={4}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="например, 'черная кожаная куртка поверх белой футболки и темно-синие джинсы'"
-                    className="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors placeholder-zinc-500"
-                />
-            ) : (
-                <ImageUploader
-                    onImageUpload={handleOutfitImageUpload}
-                    imagePreviewUrl={outfitImagePreview}
-                    label="Загрузите фото одежды:"
-                />
-            )}
+            <button
+              onClick={handleGenerateClick}
+              disabled={!canGenerate}
+              className={`w-full flex items-center justify-center gap-2 px-6 py-3 font-semibold text-white rounded-lg transition-all duration-300 ease-in-out
+                ${canGenerate
+                  ? 'bg-violet-600 hover:bg-violet-700 transform hover:-translate-y-px glowing-button'
+                  : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                }`}
+            >
+              <SparklesIcon className="w-5 h-5" />
+              {isLoading ? 'Создание образа...' : 'Создать новый образ'}
+            </button>
           </div>
+          
+          <div className="bg-[#111111] p-6 rounded-2xl shadow-lg border border-zinc-800 flex flex-col">
+            <h2 className="text-xl font-semibold text-zinc-100 border-b border-zinc-800 pb-4 mb-6">2. Ваш новый стиль</h2>
+            <ResultDisplay isLoading={isLoading} generatedImage={generatedImage} error={error} onContinue={handleContinueStyling} />
+          </div>
+        </div>
 
-          <button
-            onClick={handleGenerateClick}
-            disabled={!canGenerate}
-            className={`w-full flex items-center justify-center gap-2 px-6 py-3 font-semibold text-white rounded-lg transition-all duration-300 ease-in-out
-              ${canGenerate
-                ? 'bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-600/20 hover:shadow-violet-600/40 transform hover:-translate-y-px'
-                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-              }`}
-          >
-            <SparklesIcon className="w-5 h-5" />
-            {isLoading ? 'Создание образа...' : 'Создать новый образ'}
-          </button>
-        </div>
-        
-        <div className="bg-[#111111] p-6 rounded-2xl shadow-lg border border-zinc-800">
-          <h2 className="text-xl font-semibold text-zinc-100 border-b border-zinc-800 pb-4 mb-6">2. Ваш новый стиль</h2>
-          <ResultDisplay isLoading={isLoading} generatedImage={generatedImage} error={error} />
-        </div>
+        <Faq />
       </main>
 
        <footer className="w-full max-w-6xl text-center mt-12 text-zinc-500 text-sm">
