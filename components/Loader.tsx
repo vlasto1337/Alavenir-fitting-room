@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 const MESSAGES = [
   'Анализируем ваш стиль...',
@@ -7,6 +7,8 @@ const MESSAGES = [
   'Добавляем последние штрихи...',
   'Магия почти готова...',
 ];
+
+const PARTICLE_COUNT = 50;
 
 export const Loader: React.FC = () => {
   const [currentMessage, setCurrentMessage] = useState(MESSAGES[0]);
@@ -22,18 +24,36 @@ export const Loader: React.FC = () => {
 
     return () => clearInterval(intervalId);
   }, []);
+  
+  const particles = useMemo(() => {
+    return Array.from({ length: PARTICLE_COUNT }).map((_, i) => ({
+      cx: Math.random() * 200,
+      cy: Math.random() * 200,
+      r: 1 + Math.random() * 1.5,
+      delay: `${Math.random() * 5}s`,
+      duration: `${4 + Math.random() * 4}s`,
+    }));
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center gap-6 text-center">
-      <div className="w-24 h-24 relative">
-        <div className="gooey-container">
-          <div className="absolute top-0 left-0 w-full h-full">
-            <div className="absolute w-6 h-6 bg-violet-500 rounded-full top-1/2 left-0 transform -translate-y-1/2 animate-pulse" style={{ animationDelay: '0s' }}></div>
-            <div className="absolute w-6 h-6 bg-violet-500 rounded-full top-0 left-1/2 transform -translate-x-1/2 animate-pulse" style={{ animationDelay: '0.25s' }}></div>
-            <div className="absolute w-6 h-6 bg-violet-500 rounded-full top-1/2 right-0 transform -translate-y-1/2 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute w-6 h-6 bg-violet-500 rounded-full bottom-0 left-1/2 transform -translate-x-1/2 animate-pulse" style={{ animationDelay: '0.75s' }}></div>
-          </div>
-        </div>
+      <div className="w-48 h-48 relative text-violet-500">
+        <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full">
+          {particles.map((p, i) => (
+             <circle
+                key={i}
+                cx={p.cx}
+                cy={p.cy}
+                r={p.r}
+                fill="currentColor"
+                className="particle"
+                style={{
+                  animationDelay: p.delay,
+                  animationDuration: p.duration,
+                }}
+            />
+          ))}
+        </svg>
       </div>
       <p className="text-zinc-300 font-medium text-lg transition-opacity duration-500">{currentMessage}</p>
       <p className="text-sm text-zinc-500">Это может занять некоторое время.</p>

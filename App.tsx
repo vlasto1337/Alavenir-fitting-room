@@ -6,12 +6,12 @@ import { SparklesIcon, LogoIcon, ChevronDownIcon } from './components/icons';
 import { Faq } from './components/Faq';
 
 const PROMPT_PRESETS = [
-  'классический тренч поверх белой рубашки',
-  'уютный оверсайз-худи и черные карго-штаны',
-  'элегантный образ с блейзером и темными джинсами',
-  'футуристическая куртка в стиле киберпанк',
-  'богемный стиль с летящей узорчатой рубашкой',
-  'спортивный костюм в ярких неоновых цветах',
+  'Белая футболка, широкие джинсы и оверсайз блейзер',
+  'Высокотехнологичная куртка-анорак и брюки-карго',
+  'Шелковая блуза с объемными рукавами и юбка-карандаш',
+  'Объемный вязаный жилет поверх рубашки и вельветы',
+  'Металлизированный серебряный пуховик',
+  'Платье-комбинация в бельевом стиле и грубые ботинки',
 ];
 
 const App: React.FC = () => {
@@ -38,6 +38,11 @@ const App: React.FC = () => {
     setOriginalImageFile(file);
     setGeneratedImage(null);
     setError(null);
+    
+    // Сбрасываем референс одежды при смене фото пользователя
+    setOutfitImageFile(null);
+    setOutfitImagePreview(null);
+    
     const reader = new FileReader();
     reader.onloadend = () => {
       setOriginalImagePreview(reader.result as string);

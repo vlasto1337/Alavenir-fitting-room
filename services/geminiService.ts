@@ -32,18 +32,21 @@ export const generateStyledImage = async (
       },
     ];
     
+    const photoRealismInstruction = "Your primary goal is to create an ultra-realistic, photorealistic image. It must look like a real photograph, not a render, illustration, or drawing.";
+
     let basePrompt: string;
     if (creativityLevel <= 20) {
-        basePrompt = "Critically important: Do NOT change the person's face, features, body pose, or the background from the first image. Your task is ONLY to redraw that person wearing the specified outfit. Preserve everything else from the original person's image.";
+        basePrompt = "Critically important: Do NOT change the person's face, features, body pose, or the background from the first image. Your ONLY task is to photorealistically redraw that person wearing the specified outfit. Preserve everything else from the original person's image.";
     } else if (creativityLevel <= 50) {
-        basePrompt = "Preserve the person's face, features, and general body pose from the first image. Redraw them in the specified outfit. You may make subtle adjustments to the background and lighting to better match the new clothing style.";
+        basePrompt = "Preserve the person's face, features, and general body pose from the first image. Photorealistically redraw them in the specified outfit. You may make subtle adjustments to the background and lighting to better match the new clothing style.";
     } else if (creativityLevel <= 80) {
-        basePrompt = "Redraw the person from the first image in the specified outfit, keeping their facial identity. Feel free to adjust the body pose slightly for a more natural look and reinterpret the background to create a more cohesive and artistic scene that complements the outfit.";
+        basePrompt = "Photorealistically redraw the person from the first image in the specified outfit, keeping their facial identity. Feel free to adjust the body pose slightly for a more natural look and reinterpret the background to create a more cohesive and artistic scene that complements the outfit.";
     } else {
-        basePrompt = "Create a new artistic image inspired by the first image, featuring the same person but in the specified outfit. Be highly creative with the pose, background, lighting, and overall style to produce a compelling fashion shot.";
+        basePrompt = "Create a new artistic, photorealistic image inspired by the first image, featuring the same person but in the specified outfit. Be highly creative with the pose, background, lighting, and overall style to produce a compelling fashion shot.";
     }
 
     let textPrompt: string;
+    const negativePrompt = "Negative prompt: avoid cartoon, anime, illustration, 3d render, painting, drawing, sketches, unrealistic styles, text, letters, numbers, symbols, watermarks.";
 
     if (outfitImage) {
         parts.push({
@@ -52,9 +55,12 @@ export const generateStyledImage = async (
                 mimeType: outfitImage.mimeType,
             },
         });
-        textPrompt = basePrompt.replace('the specified outfit', 'the outfit from the second image');
+        const positiveInstruction = "Faithfully transfer all details, textures, and colors from the outfit in the second image. If the outfit has any text, logos, or patterns, they must be preserved exactly as they are. Do not add any new text or logos.";
+        // For image references, we relax the negative prompt about text, as it should be preserved from the original.
+        const imageNegativePrompt = "Negative prompt: avoid cartoon, anime, illustration, 3d render, painting, drawing, sketches, unrealistic styles, watermarks.";
+        textPrompt = `${photoRealismInstruction} ${basePrompt.replace('the specified outfit', 'the outfit from the second image.')} ${positiveInstruction} ${imageNegativePrompt}`;
     } else {
-        textPrompt = basePrompt.replace('the specified outfit', `this specific outfit: "${prompt}"`);
+        textPrompt = `${photoRealismInstruction} ${basePrompt.replace('the specified outfit', `this specific outfit: "${prompt}".`)} ${negativePrompt}`;
     }
 
     parts.push({ text: textPrompt });
@@ -75,7 +81,6 @@ export const generateStyledImage = async (
       }
     }
     
-    // Check for text-only response as a fallback for error diagnosis
     const textResponse = response.text;
     if (textResponse) {
         throw new Error(`Модель вернула текстовый ответ вместо изображения: "${textResponse}"`);
