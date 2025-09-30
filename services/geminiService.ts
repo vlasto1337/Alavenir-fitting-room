@@ -32,6 +32,7 @@ export const generateStyledImage = async (
       },
     ];
     
+    const directive = "CRITICAL: Your output MUST be only the final image. Do NOT output any text, confirmation, or explanation. Your only response should be the image itself.";
     const photoRealismInstruction = "Your primary goal is to create an ultra-realistic, photorealistic image. It must look like a real photograph, not a render, illustration, or drawing.";
 
     let basePrompt: string;
@@ -58,9 +59,9 @@ export const generateStyledImage = async (
         const positiveInstruction = "Faithfully transfer all details, textures, and colors from the outfit in the second image. If the outfit has any text, logos, or patterns, they must be preserved exactly as they are. Do not add any new text or logos.";
         // For image references, we relax the negative prompt about text, as it should be preserved from the original.
         const imageNegativePrompt = "Negative prompt: avoid cartoon, anime, illustration, 3d render, painting, drawing, sketches, unrealistic styles, watermarks.";
-        textPrompt = `${photoRealismInstruction} ${basePrompt.replace('the specified outfit', 'the outfit from the second image.')} ${positiveInstruction} ${imageNegativePrompt}`;
+        textPrompt = `${directive} ${photoRealismInstruction} ${basePrompt.replace('the specified outfit', 'the outfit from the second image.')} ${positiveInstruction} ${imageNegativePrompt}`;
     } else {
-        textPrompt = `${photoRealismInstruction} ${basePrompt.replace('the specified outfit', `this specific outfit: "${prompt}".`)} ${negativePrompt}`;
+        textPrompt = `${directive} ${photoRealismInstruction} ${basePrompt.replace('the specified outfit', `this specific outfit: "${prompt}".`)} ${negativePrompt}`;
     }
 
     parts.push({ text: textPrompt });
@@ -81,8 +82,12 @@ export const generateStyledImage = async (
       }
     }
     
-    const textResponse = response.text;
+    const textResponse = response.text?.trim();
     if (textResponse) {
+        // Check if the text response is the model just repeating instructions
+        if (textResponse.toLowerCase().includes('i will generate') || textResponse.toLowerCase().includes('ultra-realistic')) {
+             throw new Error(`Модель не смогла сгенерировать изображение и вернула текстовое описание своих действий. Попробуйте немного изменить запрос или настройки.`);
+        }
         throw new Error(`Модель вернула текстовый ответ вместо изображения: "${textResponse}"`);
     }
 
